@@ -25,7 +25,7 @@ class LegacyLauncherBrandPlugin : Plugin<Project> {
             "${project.version}+${brand.replace(Regex("[^\\dA-Za-z\\-]"), "-")}${System.getenv("VERSION_SUFFIX") ?: ""}"
         })
 
-        extension.supportEmail.convention("support@llaun.ch")
+        extension.supportEmail.convention("support@lonelycraft.ru")
         extension.productName.convention("Lonely Launcher")
         extension.updateRepository.convention(
             System.getenv("UPDATE_REPOSITORY") ?: System.getenv("GITHUB_REPOSITORY") ?: "m-melgizin/legacy-launcher"

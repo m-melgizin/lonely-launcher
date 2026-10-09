@@ -1,4 +1,3 @@
-Если Вы не можете запустить Legacy Launcher, а вместо лаунчера открывается архиватор (WinRar, 7zip, etc) попробуйте следующее:
+Если Вы не можете запустить Lonely Launcher, а вместо лаунчера открывается архиватор (WinRar, 7zip, etc) попробуйте следующее:
 
--- Скачайте EXE-версию Legacy Launcher (для Windows): https://llaun.ch/installer
 -- Попробуйте переустановить Java с сайта: https://java.com/

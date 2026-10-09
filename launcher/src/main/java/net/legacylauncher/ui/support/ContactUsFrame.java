@@ -6,6 +6,7 @@ import net.legacylauncher.configuration.Configuration;
 import net.legacylauncher.ui.frames.VActionFrame;
 import net.legacylauncher.ui.images.Images;
 import net.legacylauncher.ui.loc.LocalizableButton;
+import net.legacylauncher.ui.login.buttons.SupportButton;
 import net.legacylauncher.util.OS;
 import net.legacylauncher.util.SwingUtil;
 import net.legacylauncher.util.U;
@@ -19,9 +20,9 @@ import java.util.List;
 public class ContactUsFrame extends VActionFrame {
 
     private static final List<SupportService> supportServices = Arrays.asList(
-            cisOnly("vk", "https://llaun.ch/support/vk"),
-            cisOnly("discord", "https://llaun.ch/support/discord/ru"),
-            notCis("discord", "https://llaun.ch/support/discord/intl"),
+            cisOnly("vk", SupportButton.VK_URL),
+            any("telegram", SupportButton.TELEGRAM_URL),
+            any("discord", SupportButton.DISCORD_URL),
             any("mail", "envelope-open", "mailto:" + BuildConfig.SUPPORT_EMAIL)
     );
 

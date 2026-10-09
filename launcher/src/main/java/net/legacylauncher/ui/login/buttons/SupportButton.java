@@ -52,24 +52,31 @@ public class SupportButton extends LocalizableButton implements Blockable {
         }
     };
 
+    public static final String VK_URL = "https://vk.ru/mclonelycraft";
+    public static final String TELEGRAM_URL = "https://t.me/mclonelycraft";
+    public static final String DISCORD_URL = "https://discord.gg/qMC4QWcet";
+
     private final HashMap<String, SupportMenu> localeMap = new HashMap<>();
 
     {
         localeMap.put("ru_RU", new SupportMenu("info-circle")
-                .add("loginform.button.support.vk", Images.getIcon16("logo-vk"), actionURL("https://llaun.ch/vk"))
-                .add("loginform.button.support.discord", Images.getIcon16("logo-discord"), actionURL("https://llaun.ch/discord/ru"))
+                .add("loginform.button.support.vk", Images.getIcon16("logo-vk"), actionURL(VK_URL))
+                .add("loginform.button.support.telegram", Images.getIcon16("logo-telegram"), actionURL(TELEGRAM_URL))
+                .add("loginform.button.support.discord", Images.getIcon16("logo-discord"), actionURL(DISCORD_URL))
                 .addSeparator()
                 .add("loginform.button.support", Images.getIcon16("life-ring"), showSupportFrame)
         );
 
         localeMap.put("uk_UA", new SupportMenu("info-circle")
-                .add("loginform.button.support.discord", Images.getIcon16("logo-discord"), actionURL("https://llaun.ch/discord/ru"))
+                .add("loginform.button.support.telegram", Images.getIcon16("logo-telegram"), actionURL(TELEGRAM_URL))
+                .add("loginform.button.support.discord", Images.getIcon16("logo-discord"), actionURL(DISCORD_URL))
                 .addSeparator()
                 .add("loginform.button.support", Images.getIcon16("life-ring"), showSupportFrame)
         );
 
         localeMap.put("en_US", new SupportMenu("comments-o")
-                .add("loginform.button.support.discord", Images.getIcon16("logo-discord"), actionURL("https://llaun.ch/discord/intl"))
+                .add("loginform.button.support.telegram", Images.getIcon16("logo-telegram"), actionURL(TELEGRAM_URL))
+                .add("loginform.button.support.discord", Images.getIcon16("logo-discord"), actionURL(DISCORD_URL))
                 .addSeparator()
                 .add("loginform.button.support", Images.getIcon16("life-ring"), showSupportFrame)
         );
