@@ -1,9 +1,7 @@
 package net.legacylauncher.ui;
 
 import net.legacylauncher.LegacyLauncher;
-import net.legacylauncher.afterlife.DoomsdayMessageV1;
 import net.legacylauncher.managers.ConnectivityManager;
-import net.legacylauncher.managers.DoomsdayManager;
 import net.legacylauncher.ui.alert.Alert;
 import net.legacylauncher.ui.images.Images;
 import net.legacylauncher.ui.loc.*;
@@ -17,7 +15,6 @@ import net.legacylauncher.util.SwingUtil;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -83,30 +80,27 @@ public class ConnectivityWarning extends ExtendedFrame implements LocalizableCom
     public void updateEntries(List<ConnectivityManager.Entry> entries) {
         entriesPanel.removeAll();
 
-        if (doomsdayMessage == null) {
-            List<String> unavailableHosts = entries.stream()
-                    .filter(ConnectivityManager.Entry::isQueued)
-                    .filter(e -> !e.isReachable())
-                    .flatMap(e -> e.getHosts().stream())
-                    .sorted()
-                    .collect(Collectors.toList());
-            List<ConnectivityManager.Entry> unreachableEntries = entries.stream()
-                    .filter(ConnectivityManager.Entry::isQueued)
-                    .filter(e -> !e.isReachable())
-                    .sorted(
-                            Comparator.comparing(ConnectivityManager.Entry::isDone, Boolean::compareTo)
-                                    .reversed()
-                                    .thenComparing(
-                                            Comparator.comparing(ConnectivityManager.Entry::getPriority).reversed()
-                                    )
-                                    .thenComparing(ConnectivityManager.Entry::getName)
-                    )
-                    .collect(Collectors.toList());
-            tlaunchNotAvailable = entries.stream().anyMatch(e -> e.getName().equals("llaun.ch") && !e.isReachable());
-            noConnection = entries.stream().allMatch(e -> e.isDone() && !e.isReachable());
-            queryDoomsday();
-            fillEntries(unreachableEntries, unavailableHosts);
-        }
+        List<String> unavailableHosts = entries.stream()
+                .filter(ConnectivityManager.Entry::isQueued)
+                .filter(e -> !e.isReachable())
+                .flatMap(e -> e.getHosts().stream())
+                .sorted()
+                .collect(Collectors.toList());
+        List<ConnectivityManager.Entry> unreachableEntries = entries.stream()
+                .filter(ConnectivityManager.Entry::isQueued)
+                .filter(e -> !e.isReachable())
+                .sorted(
+                        Comparator.comparing(ConnectivityManager.Entry::isDone, Boolean::compareTo)
+                                .reversed()
+                                .thenComparing(
+                                        Comparator.comparing(ConnectivityManager.Entry::getPriority).reversed()
+                                )
+                                .thenComparing(ConnectivityManager.Entry::getName)
+                )
+                .collect(Collectors.toList());
+        tlaunchNotAvailable = entries.stream().anyMatch(e -> e.getName().equals("llaun.ch") && !e.isReachable());
+        noConnection = entries.stream().allMatch(e -> e.isDone() && !e.isReachable());
+        fillEntries(unreachableEntries, unavailableHosts);
         updateLocale();
         SwingUtil.later(() -> {
             revalidate();
@@ -209,35 +203,17 @@ public class ConnectivityWarning extends ExtendedFrame implements LocalizableCom
         }
     }
 
-    private boolean doomsdayQueried;
-    private DoomsdayMessageV1 doomsdayMessage;
-
-    private void queryDoomsday() {
-        if (doomsdayQueried) {
-            return;
-        }
-        DoomsdayManager.queryMessage().thenAccept(message -> SwingUtil.later(() -> {
-            ConnectivityWarning.this.doomsdayMessage = message;
-            updateEntries(Collections.emptyList());
-        }));
-        doomsdayQueried = true;
-    }
-
     @Override
     public void updateLocale() {
         setTitle(Localizable.get("connectivity.warning.title"));
 
-        if (doomsdayMessage != null) {
-            body.setText(doomsdayMessage.getMessageOrDefault(Localizable.get().getLocale().toString()));
-        } else {
-            final ConnectivityType type = noConnection ? ConnectivityType.NONE : ConnectivityType.SOME;
-            final String bodySuffix = noConnection ? "empty" : "text";
-            body.setText(String.format(Locale.ROOT, "%s <a href=\"%s\">%s</a>",
-                    Localizable.get("connectivity.warning.body." + bodySuffix),
-                    generateConnectivityLink(type),
-                    Localizable.get("connectivity.warning.body.link")
-            ));
-        }
+        final ConnectivityType type = noConnection ? ConnectivityType.NONE : ConnectivityType.SOME;
+        final String bodySuffix = noConnection ? "empty" : "text";
+        body.setText(String.format(Locale.ROOT, "%s <a href=\"%s\">%s</a>",
+                Localizable.get("connectivity.warning.body." + bodySuffix),
+                generateConnectivityLink(type),
+                Localizable.get("connectivity.warning.body.link")
+        ));
         body.setPreferredSize(new Dimension(WIDTH_BORDERED, SwingUtil.getPrefHeight(body, WIDTH_BORDERED)));
         body.setMaximumSize(new Dimension(WIDTH_BORDERED, SwingUtil.getPrefHeight(body, WIDTH_BORDERED)));
     }
