@@ -3,7 +3,6 @@ package net.legacylauncher.bootstrap.ui;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.legacylauncher.bootstrap.exception.FatalExceptionType;
-import net.legacylauncher.bootstrap.meta.UpdateMeta;
 import net.legacylauncher.bootstrap.task.Task;
 import net.legacylauncher.bootstrap.task.TaskListener;
 import net.legacylauncher.bootstrap.ui.swing.SwingImageIcon;
@@ -196,6 +195,19 @@ public final class UserInterface implements IInterface {
         }
     }
 
+    public static boolean askYesNo(String message) {
+        if (!isHeaded()) {
+            return false;
+        }
+        return JOptionPane.showConfirmDialog(
+                null,
+                message,
+                getLString("appname", "Bootstrap"),
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        ) == JOptionPane.YES_OPTION;
+    }
+
     public static void showFatalError(FatalExceptionType type) {
         if (isHeaded()) {
             FatalExceptionHandler.handle(type);
@@ -248,21 +260,6 @@ public final class UserInterface implements IInterface {
     @Override
     public void dispose() {
         getFrame().dispose();
-    }
-
-    public UpdateMeta.ConnectionInterrupter createInterrupter() {
-        return callback -> SwingUtilities.invokeLater(() -> {
-            JButton button = new JButton(getLString("skip", "Skip"));
-            button.addActionListener(e -> {
-                panel.remove(button);
-                panel.revalidate();
-                panel.repaint();
-                callback.onConnectionInterrupted();
-            });
-            panel.add(button, BorderLayout.EAST);
-            panel.revalidate();
-            panel.repaint();
-        });
     }
 
     @Override

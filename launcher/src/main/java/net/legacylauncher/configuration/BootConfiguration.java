@@ -16,6 +16,12 @@ public final class BootConfiguration {
         return repositories;
     }
 
+    public static BootConfiguration defaults() {
+        BootConfiguration config = new BootConfiguration();
+        config.ely = true;
+        return config;
+    }
+
     public static BootConfiguration parse(String options) {
         Objects.requireNonNull(options, "options");
         return new Gson().fromJson(options, BootConfiguration.class);

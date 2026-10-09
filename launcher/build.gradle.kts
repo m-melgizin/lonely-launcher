@@ -264,6 +264,7 @@ buildConfig {
     buildConfigField("String", "FULL_BRAND", "\"${brand.displayName.get()}\"")
     buildConfigField("String", "VERSION", "\"${brand.version.get()}\"")
     buildConfigField("String", "SUPPORT_EMAIL", "\"${brand.supportEmail.get()}\"")
+    buildConfigField("String", "PRODUCT_NAME", "\"${brand.productName.get()}\"")
 }
 
 val prepareDeploy by tasks.registering {

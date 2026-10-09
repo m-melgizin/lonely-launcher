@@ -3,7 +3,6 @@ package net.legacylauncher.bootstrap;
 import lombok.extern.slf4j.Slf4j;
 import net.legacylauncher.bootstrap.launcher.LocalLauncher;
 import net.legacylauncher.bootstrap.launcher.LocalLauncherTask;
-import net.legacylauncher.bootstrap.meta.UpdateMeta;
 import net.legacylauncher.bootstrap.task.Task;
 import org.apache.commons.io.IOUtils;
 
@@ -44,7 +43,7 @@ public class BootstrapDebug {
         bootstrap.setFork("true".equalsIgnoreCase(System.getenv("LL_FORK")));
         bootstrap.setupUserInterface(true);
 
-        Task<LocalLauncherTask> localLauncherTask = bootstrap.prepareLauncher(null);
+        Task<LocalLauncherTask> localLauncherTask = bootstrap.prepareLauncher();
         LocalLauncher localLauncher = localLauncherTask.call().getLauncher();
         bootstrap.initIPC(localLauncher);
         bootstrap.getBootstrapIPC().setLauncherConfiguration(options(BuildConfig.SHORT_BRAND));
@@ -61,18 +60,6 @@ public class BootstrapDebug {
     }
 
     private static String options(String brand) throws IOException {
-        if ("true".equals(System.getProperty("tlauncher.bootstrap.debug.external"))) {
-            try {
-                return UpdateMeta.fetchFor(
-                        brand,
-                        // interrupt immediately
-                        UpdateMeta.ConnectionInterrupter.Callback::onConnectionInterrupted
-                ).call().getOptions();
-            } catch (Exception e) {
-                log.error("Unable to fetch update meta", e);
-                return null;
-            }
-        }
         return IOUtils.toString(BootstrapDebug.class.getResourceAsStream("options.json"), StandardCharsets.UTF_8);
     }
 

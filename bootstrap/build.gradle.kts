@@ -172,16 +172,25 @@ val collectLauncherLibsRepo by tasks.registering(Sync::class) {
     }
 }
 
+// Embedded launcher, so the release jar works without downloading anything.
+// See InternalLauncher and EmbeddedLibraries in the bootstrap.
+bootJar.bootInf {
+    into("classes") {
+        from(launcherJar) {
+            rename { "launcher.jar" }
+        }
+        into("launcher-libraries") {
+            from(collectLauncherLibsRepo)
+        }
+    }
+}
+
 fun JavaExec.commonRun() {
     group = "Execution"
     maxHeapSize = "256M"
 
     System.getenv("JRE_EXECUTABLE")?.let {
         executable(it)
-    }
-
-    if (System.getenv("RUN_EXTERNAL") == "true") {
-        jvmArgs("-Dtlauncher.bootstrap.debug.external=true")
     }
 
     System.getenv("UI_SCALE")?.let {
@@ -271,6 +280,8 @@ buildConfig {
     buildConfigField("String", "SHORT_BRAND", brand.brand.map { "\"$it\"" })
     buildConfigField("String", "FULL_BRAND", brand.displayName.map { "\"$it\"" })
     buildConfigField("String", "VERSION", brand.version.map { "\"$it\"" })
+    buildConfigField("String", "PRODUCT_NAME", brand.productName.map { "\"$it\"" })
+    buildConfigField("String", "UPDATE_REPOSITORY", brand.updateRepository.map { "\"$it\"" })
 }
 
 val processBootResources by tasks.getting(ProcessResources::class) {
@@ -362,6 +373,25 @@ val deploy by tasks.registering {
 
 val assemble: Task by tasks.getting {
     dependsOn(prepareBootstrapDeploy)
+}
+
+// Asset name must stay stable: the updater looks for it in GitHub releases.
+val releaseJarName = "LonelyLauncher.jar"
+
+val releaseJar by tasks.registering {
+    group = "distribution"
+    description = "Builds the self-contained release jar and its SHA-256 checksum"
+    inputs.files(bootJar)
+    val releaseDir = layout.buildDirectory.dir("release")
+    outputs.dir(releaseDir)
+    doLast {
+        val dir = releaseDir.get().asFile
+        dir.deleteRecursively()
+        dir.mkdirs()
+        val target = dir.resolve(releaseJarName)
+        bootJar.outputs.files.singleFile.copyTo(target)
+        dir.resolve("$releaseJarName.sha256").writeText("${generateChecksum(target)}  $releaseJarName\n")
+    }
 }
 
 @Suppress("UnstableApiUsage")

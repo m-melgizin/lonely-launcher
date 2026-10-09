@@ -1,0 +1,56 @@
+name: Release
+
+# Push a tag like v1.170.0 to publish a release.
+# Tags with a suffix (v1.170.0-beta.1) become pre-releases, which the launcher doesn't offer as updates.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      SHORT_BRAND: lonely
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Read version from tag
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't look like vMAJOR.MINOR.PATCH"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test
+        run: ./gradlew -Pversion=${{ steps.version.outputs.version }} build :bootstrap:releaseJar
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          prerelease=()
+          if [[ "$VERSION" == *-* ]]; then
+            prerelease=(--prerelease)
+          fi
+          gh release create "$GITHUB_REF_NAME" \
+            bootstrap/build/release/LonelyLauncher.jar \
+            bootstrap/build/release/LonelyLauncher.jar.sha256 \
+            --title "Lonely Launcher $VERSION" \
+            --generate-notes \
+            "${prerelease[@]}"

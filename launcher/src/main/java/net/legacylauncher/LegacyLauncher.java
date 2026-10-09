@@ -147,7 +147,8 @@ public final class LegacyLauncher {
         BootConfiguration bootConfig;
         boolean bootConfigEmpty = false;
         try {
-            bootConfig = BootConfiguration.parse(launcherConfiguration);
+            // the bootstrap doesn't fetch remote configuration anymore, so it's normally absent
+            bootConfig = launcherConfiguration == null ? BootConfiguration.defaults() : BootConfiguration.parse(launcherConfiguration);
         } catch (RuntimeException rE) {
             log.warn("Couldn't parse boot config: {}", launcherConfiguration, rE);
             bootConfig = new BootConfiguration();
@@ -454,7 +455,7 @@ public final class LegacyLauncher {
 
         setupErrorHandler();
 
-        log.info("Starting Legacy Launcher {} {}", BuildConfig.FULL_BRAND, getVersion().toString());
+        log.info("Starting {} {}", (BuildConfig.PRODUCT_NAME + " " + BuildConfig.FULL_BRAND).trim(), getVersion().toString());
         BootstrapIPC.BootstrapRelease bootstrapRelease = ipc.getBootstrapRelease();
         log.info("... using {} {}", bootstrapRelease.name, bootstrapRelease.version);
         log.info("... with dns resolver {}", resolver.describe());

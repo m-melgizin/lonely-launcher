@@ -43,8 +43,6 @@ public class Updater extends Task<Void> {
     protected Void execute() throws Exception {
         final boolean restartOnFinish = finishAction == FinishAction.RESTART;
 
-        showUIMessage(restartOnFinish);
-
         ProcessBuilder processBuilder = null;
 
         if (restartOnFinish) {
@@ -83,21 +81,6 @@ public class Updater extends Task<Void> {
         } finally {
             Files.delete(tempFile);
         }
-    }
-
-    private void showUIMessage(boolean restartOnFinish) {
-        StringBuilder message = new StringBuilder();
-        if (restartOnFinish) {
-            message.append(UserInterface.getLString("update.restart.auto",
-                    "Application is going to self-update and then restart automatically."));
-        } else {
-            message.append(UserInterface.getLString("update.restart.manual",
-                    "Application is going to self-update. Please restart it manually."));
-        }
-        message.append("\n\n");
-        message.append(UserInterface.getLString("update.support",
-                "Should the update fail, please contact our support at https://legacylauncher.net"));
-        UserInterface.showWarning(message.toString(), null);
     }
 
     private enum FinishAction {

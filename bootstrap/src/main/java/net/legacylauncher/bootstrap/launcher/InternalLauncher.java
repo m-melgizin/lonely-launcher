@@ -4,6 +4,7 @@ import com.google.gson.JsonSyntaxException;
 import net.legacylauncher.bootstrap.meta.LocalLauncherMeta;
 import net.legacylauncher.bootstrap.meta.OldLauncherMeta;
 import net.legacylauncher.bootstrap.task.Task;
+import net.legacylauncher.bootstrap.util.Sha256Sign;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
@@ -33,17 +34,24 @@ public class InternalLauncher extends LocalCastingLauncher {
         return url.openStream();
     }
 
-    private Path getTempFile() throws IOException {
+    public Path getTempFile() throws IOException {
         if (tempFile == null) {
             Path temp = Files.createTempFile("tlauncher", null);
-            unpack(Files.newOutputStream(temp));
+            temp.toFile().deleteOnExit();
+            unpack(temp);
             this.tempFile = temp;
         }
         return tempFile;
     }
 
-    private void unpack(OutputStream out) throws IOException {
-        IOUtils.copy(getInputStream(), out);
+    public String getChecksum() throws IOException {
+        return Sha256Sign.calc(getTempFile());
+    }
+
+    private void unpack(Path file) throws IOException {
+        try (InputStream in = getInputStream(); OutputStream out = Files.newOutputStream(file)) {
+            IOUtils.copy(in, out);
+        }
     }
 
     @Override
@@ -65,7 +73,7 @@ public class InternalLauncher extends LocalCastingLauncher {
             @Override
             protected LocalLauncher execute() throws Exception {
                 Files.createDirectories(file.getParent());
-                unpack(Files.newOutputStream(file));
+                unpack(file);
 
                 try {
                     return new LocalLauncher(file, libFolder);

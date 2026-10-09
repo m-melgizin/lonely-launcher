@@ -1,15 +1,11 @@
 package net.legacylauncher.bootstrap;
 
 import com.github.zafarkhaja.semver.Version;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonSyntaxException;
 import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpecBuilder;
 import lombok.extern.slf4j.Slf4j;
-import net.legacylauncher.afterlife.DoomsdayMessageV1;
 import net.legacylauncher.bootstrap.exception.FatalExceptionType;
 import net.legacylauncher.bootstrap.ipc.BootstrapIPC;
 import net.legacylauncher.bootstrap.ipc.BootstrapIPCProvider;
@@ -18,12 +14,11 @@ import net.legacylauncher.bootstrap.meta.*;
 import net.legacylauncher.bootstrap.ssl.FixSSL;
 import net.legacylauncher.bootstrap.task.Task;
 import net.legacylauncher.bootstrap.task.TaskInterruptedException;
-import net.legacylauncher.bootstrap.task.TaskList;
-import net.legacylauncher.bootstrap.transport.SignedStream;
 import net.legacylauncher.bootstrap.ui.HeadlessInterface;
 import net.legacylauncher.bootstrap.ui.IInterface;
 import net.legacylauncher.bootstrap.ui.UserInterface;
 import net.legacylauncher.bootstrap.ui.flatlaf.FlatLaf;
+import net.legacylauncher.bootstrap.update.GitHubReleases;
 import net.legacylauncher.bootstrap.util.*;
 import net.legacylauncher.bootstrap.util.stream.OutputRedirectBuffer;
 import net.legacylauncher.util.shared.FlatLafConfiguration;
@@ -35,7 +30,6 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 @Slf4j
@@ -64,8 +58,6 @@ public final class Bootstrap {
                 bootstrapParser.accepts("headlessMode", "defines if bootstrap should run without UI");
         ArgumentAcceptingOptionSpec<String> packageMode =
                 bootstrapParser.accepts("packageMode", "defines if bootstrap runs inside a package").withOptionalArg();
-        ArgumentAcceptingOptionSpec<Path> targetUpdateFile =
-                bootstrapParser.accepts("updateMetaFile", "points to update meta file").withRequiredArg().withValuesConvertedBy(new PathValueConverter());
         ArgumentAcceptingOptionSpec<String> restartExec =
                 bootstrapParser.accepts("restartExec", "instructs the bootstrap to run this executable after self update").withRequiredArg().ofType(String.class);
         OptionSpecBuilder requireMinecraftAccount =
@@ -92,13 +84,10 @@ public final class Bootstrap {
 
         CombinedOptionSet bootstrapParsed = new CombinedOptionSet(parseJvmArgs(bootstrapParser), bootstrapParser.parse(args.getBootstrap()));
 
-        boolean disallowBetaSwitch = false;
         if (bootstrapParsed.has(brandParser)) {
             String brand = bootstrapParsed.valueOf(brandParser);
             log.info("Picked up brand from arguments: {}", brand);
             localBootstrapMeta.setShortBrand(brand);
-            // disallow switching if branch is set by an argument
-            disallowBetaSwitch = true;
         }
         log.info("Short brand: {}", localBootstrapMeta.getShortBrand());
 
@@ -114,10 +103,6 @@ public final class Bootstrap {
         TargetConfig targetConfig = TargetConfig.readConfigFromFile(configFile);
 
         Bootstrap bootstrap = new Bootstrap(args.getLauncher(), bootstrapJar, targetConfig);
-
-        if (disallowBetaSwitch) {
-            bootstrap.whenIPCReady(ipc -> ipc.setMetadata("can_switch_to_beta_branch", Boolean.FALSE));
-        }
 
         log.info("Version: {}", localBootstrapMeta.getVersion());
 
@@ -145,9 +130,6 @@ public final class Bootstrap {
         }
         bootstrap.setTargetLibFolder(targetLibFolder);
         log.info("Target lib folder: {}", bootstrap.getTargetLibFolder());
-
-        bootstrap.setUpdateMetaFile(bootstrapParsed.valueOf(targetUpdateFile));
-        log.info("Update meta file: {}", bootstrap.getUpdateMetaFile());
 
         bootstrap.setIgnoreUpdate(bootstrapParsed.has(forceUpdateParser));
         log.info("Ignore launcher update: {}", bootstrap.getIgnoreUpdate());
@@ -249,22 +231,8 @@ public final class Bootstrap {
 
     static void handleFatalError(Bootstrap bootstrap, Throwable e) {
         FatalExceptionType exceptionType = FatalExceptionType.getType(e);
-        BootstrapIPC ipc = bootstrap == null ? null : bootstrap.ipc;
-
-        boolean doomsDay = false;
-        if (exceptionType == FatalExceptionType.INTERNET_CONNECTIVITY) {
-            DoomsdayMessageV1 message = DoomsdayMessage.requestSyncOrNull();
-            if (message != null) {
-                log.warn("Found Doomsday message: {}", message);
-                UserInterface.showError(message.getMessageOrDefault(), null);
-                doomsDay = true;
-            }
-        }
         if (bootstrap != null) {
             bootstrap.getUserInterface().dispose();
-        }
-        if (doomsDay) {
-            return;
         }
         UserInterface.showFatalError(exceptionType);
     }
@@ -279,12 +247,10 @@ public final class Bootstrap {
     private final Path bootstrapJar;
     private Path targetJar;
     private Path targetLibFolder;
-    private Path targetUpdateFile;
-    private Path updateMetaFile;
     private String packageMode;
     private boolean ignoreUpdate, ignoreSelfUpdate;
     private List<String> restartCmd;
-    private boolean switchToBeta, fork;
+    private boolean fork;
 
     Bootstrap(String[] launcherArgs, Path bootstrapJar, TargetConfig config, Path targetJar, Path targetLibFolder) {
         this.launcherArgs = launcherArgs;
@@ -304,17 +270,8 @@ public final class Bootstrap {
 
         whenIPCReady(ipc -> ipc.setMetadata("jna", Boolean.TRUE));
 
-        boolean isNotBeta = !BootstrapMeta.BETA_BRANCH.equals(LocalBootstrapMeta.getInstance().getShortBrand());
-        // announce capability, but disallow switching from beta to beta :)
-        whenIPCReady(ipc -> ipc.setMetadata("can_switch_to_beta_branch", isNotBeta));
-        if (config.isSwitchToBeta()) {
-            if (isNotBeta) {
-                log.info("Configuration tells us to switch to beta branch");
-                switchToBeta = true;
-            } else {
-                log.info("Configuration tells us to switch to beta branch, but we're already on beta");
-            }
-        }
+        // there is no beta channel: updates come from GitHub releases
+        whenIPCReady(ipc -> ipc.setMetadata("can_switch_to_beta_branch", Boolean.FALSE));
 
         whenIPCReady(ipc -> ipc.setMetadata("has_flatlaf", Boolean.TRUE));
         SwingUtilities.invokeLater(() -> {
@@ -428,22 +385,6 @@ public final class Bootstrap {
         this.restartCmd = restartCmd;
     }
 
-    public Path getTargetUpdateFile() {
-        return targetUpdateFile;
-    }
-
-    private void setTargetUpdateFile(Path targetUpdateFile) {
-        this.targetUpdateFile = targetUpdateFile;
-    }
-
-    public Path getUpdateMetaFile() {
-        return updateMetaFile;
-    }
-
-    private void setUpdateMetaFile(Path updateMetaFile) {
-        this.updateMetaFile = updateMetaFile;
-    }
-
     public boolean isFork() {
         return fork;
     }
@@ -456,77 +397,34 @@ public final class Bootstrap {
         return ipc;
     }
 
-    DownloadEntry getBootstrapUpdate(UpdateMeta updateMeta) {
-        RemoteBootstrapMeta remoteMeta = Objects.requireNonNull(updateMeta, "updateMeta").getBootstrap();
-
-        if (remoteMeta == null) {
-            log.warn("RemoteBootstrap meta is not available");
-            return null;
-        }
-
-        log.info("RemoteBootstrap meta: {}", remoteMeta);
-
-        Objects.requireNonNull(remoteMeta, "RemoteBootstrap meta");
-        Objects.requireNonNull(remoteMeta.getDownload(), "RemoteBootstrap download URL");
-
-        log.info("Local bootstrap version: {}", LocalBootstrapMeta.getInstance().getVersion());
-        log.info("Remote bootstrap version: {}", remoteMeta.getVersion());
-
-        if (LocalBootstrapMeta.getInstance().getVersion().isHigherThan(remoteMeta.getVersion())) {
-            log.warn("Local bootstrap version is newer than remote one");
-            return null;
-        }
-
-        String localBootstrapChecksum;
-        try {
-            localBootstrapChecksum = Sha256Sign.calc(bootstrapJar);
-        } catch (Exception e) {
-            log.error("Could not get local bootstrap checksum", e);
-            return null;
-        }
-
-        log.info("Remote bootstrap checksum of selected package: {}", remoteMeta.getDownload());
-
-        log.info("Local bootstrap checksum: {}", localBootstrapChecksum);
-        log.info("Remote bootstrap checksum: {}", remoteMeta.getDownload().getChecksum());
-
-        if (localBootstrapChecksum.equalsIgnoreCase(remoteMeta.getDownload().getChecksum())) {
-            return null;
-        }
-
-        return remoteMeta.getDownload();
+    Task<Void> prepareLibraries(LocalLauncherMeta localLauncherMeta) {
+        return new Task<Void>("prepareLibraries") {
+            @Override
+            protected Void execute() throws Exception {
+                List<Library> libraries = localLauncherMeta.getLibraries();
+                Path libDir = getTargetLibFolder();
+                for (int i = 0; i < libraries.size(); i++) {
+                    updateProgress((double) i / libraries.size());
+                    checkInterrupted();
+                    libraries.get(i).prepare(libDir);
+                }
+                return null;
+            }
+        };
     }
 
-    TaskList downloadLibraries(LocalLauncherMeta localLauncherMeta) {
-        TaskList taskList = new TaskList("downloadLibraries", 4);
-        Path libDir = getTargetLibFolder();
-
-        for (Library library : localLauncherMeta.getLibraries()) {
-            taskList.submit(library.download(libDir));
-        }
-
-        return taskList;
-    }
-
-    Task<LocalLauncherTask> prepareLauncher(final UpdateMeta updateMeta) {
+    Task<LocalLauncherTask> prepareLauncher() {
         return new Task<LocalLauncherTask>("prepareLauncher") {
             @Override
             protected LocalLauncherTask execute() throws Exception {
-                RemoteLauncher remoteLauncher = updateMeta == null ? null : new RemoteLauncher(updateMeta.getLauncher(switchToBeta));
-                log.info("Remote launcher: {}", remoteLauncher);
-
-                final boolean ignoreUpdate = getIgnoreUpdate();
-
-                LocalLauncherTask localLauncherTask = bindTo(getLocalLauncher(remoteLauncher), .0, ignoreUpdate ? 1. : .25);
+                LocalLauncherTask localLauncherTask = bindTo(getLocalLauncher(), .0, .25);
                 LocalLauncher localLauncher = localLauncherTask.getLauncher();
                 LocalLauncherMeta localLauncherMeta = localLauncher.getMeta();
                 log.info("Local launcher: {}", localLauncher);
                 printVersion(localLauncherMeta);
 
-                if (!ignoreUpdate) {
-                    log.info("Downloading libraries...");
-                    bindTo(downloadLibraries(localLauncherMeta), .25, 1.);
-                }
+                log.info("Preparing libraries...");
+                bindTo(prepareLibraries(localLauncherMeta), .25, 1.);
 
                 return localLauncherTask;
             }
@@ -559,82 +457,19 @@ public final class Bootstrap {
                 }
             }
 
-            private final AtomicBoolean updateMetaRequesting = new AtomicBoolean();
-
             @Override
             protected Void execute() throws Exception {
                 printVersion(null);
                 lowerRequirementsIfNeeded();
-                UpdateMeta updateMeta;
 
-                if (updateMetaFile != null) {
-                    Compressor.init();
-                    try (SignedStream signedStream = new SignedStream(Files.newInputStream(updateMetaFile))) {
-                        updateMeta = UpdateMeta.fetchFrom(
-                                Compressor.uncompressMarked(signedStream, false),
-                                LocalBootstrapMeta.getInstance().getShortBrand()
-                        );
-                        signedStream.validateSignature();
-                    }
-                } else {
-                    updateMetaRequesting.set(true);
-                    try {
-                        UpdateMeta.ConnectionInterrupter interrupter = createInterrupter();
-                        updateMeta = bindTo(
-                                UpdateMeta.fetchFor(
-                                        LocalBootstrapMeta.getInstance().getShortBrand(),
-                                        callback -> {
-                                            if (updateMetaRequesting.get() && interrupter != null) {
-                                                interrupter.mayInterruptConnection(callback);
-                                            }
-                                        }
-                                ),
-                                .0,
-                                .25
-                        );
-                    } catch (UpdateMeta.UpdateMetaFetchFailed e) {
-                        log.error("Update meta fetch failed", e);
-                        updateMeta = null;
-                    } finally {
-                        updateMetaRequesting.set(false);
-                    }
+                if (bindTo(checkForUpdates(), .0, .25)) {
+                    return null; // the updater restarts or exits the application
                 }
 
-                if (updateMeta != null) {
-                    DownloadEntry downloadEntry = getBootstrapUpdate(updateMeta);
-                    if (downloadEntry != null) {
-                        if (getIgnoreSelfUpdate()) {
-                            log.info("Bootstrap self update ignored: {}",
-                                    updateMeta.getBootstrap() == null ? null : updateMeta.getBootstrap().getVersion());
-                        } else {
-                            Updater updater = new Updater("bootstrapUpdate", bootstrapJar, downloadEntry);
-                            if (getRestartCmd() != null) {
-                                updater.restartOnFinish(getRestartCmd());
-                            }
-                            bindTo(updater, .25, 1.);
-                            return null;
-                        }
-                    }
-                }
-
-
-                LocalLauncherTask localLauncherTask = bindTo(prepareLauncher(updateMeta), .25, .75);
+                LocalLauncherTask localLauncherTask = bindTo(prepareLauncher(), .25, .75);
                 LocalLauncher localLauncher = localLauncherTask.getLauncher();
 
                 initIPC(localLauncher);
-
-                if (updateMeta != null) {
-                    try {
-                        Gson gson = new Gson();
-                        JsonElement json = gson.fromJson(updateMeta.getOptions(), JsonElement.class);
-                        ipc.setLauncherConfiguration(gson.toJson(json));
-                    } catch (JsonSyntaxException e) {
-                        ipc.setLauncherConfiguration(updateMeta.getOptions());
-                    }
-                }
-                if (localLauncherTask.isUpdated() && updateMeta != null) {
-                    addUpdateMessage(updateMeta.getLauncher(switchToBeta));
-                }
 
                 bindTo(startLauncher(localLauncher), 0.75, 1.);
 
@@ -646,6 +481,67 @@ public final class Bootstrap {
                 return null;
             }
         };
+    }
+
+    /**
+     * Asks the user to update if there's a newer release on GitHub.
+     *
+     * @return true if the update has been applied and the application should not continue
+     */
+    private Task<Boolean> checkForUpdates() {
+        return new Task<Boolean>("checkUpdate") {
+            @Override
+            protected Boolean execute() throws Exception {
+                if (internal == null) {
+                    log.info("Not a release build (no embedded launcher), skipping update check");
+                    return false;
+                }
+                if (getIgnoreSelfUpdate()) {
+                    log.info("Self update is disabled, skipping update check");
+                    return false;
+                }
+                Optional<GitHubReleases.Release> latest = bindTo(
+                        GitHubReleases.fetchLatest(BuildConfig.UPDATE_REPOSITORY), .0, 1.
+                );
+                if (!latest.isPresent()) {
+                    return false;
+                }
+                GitHubReleases.Release release = latest.get();
+                Version current = LocalBootstrapMeta.getInstance().getVersion();
+                log.info("Latest release: {}, current version: {}", release, current);
+                if (!release.getVersion().isHigherThan(current)) {
+                    return false;
+                }
+                String question = String.format(
+                        UserInterface.getLString("update.available",
+                                "%s %s is available (you have %s). Update now?"),
+                        BuildConfig.PRODUCT_NAME,
+                        release.getVersion(),
+                        current.getNormalVersion()
+                );
+                if (!UserInterface.askYesNo(question)) {
+                    log.info("User declined the update");
+                    return false;
+                }
+                Updater updater = new Updater("selfUpdate", bootstrapJar, new DownloadEntry(
+                        GitHubReleases.ASSET_NAME,
+                        Collections.singletonList(release.getDownloadUrl()),
+                        release.getSha256()
+                ));
+                updater.restartOnFinish(getRestartCmd() != null ? getRestartCmd() : defaultRestartCmd());
+                bindTo(updater, .0, 1.);
+                return true;
+            }
+        };
+    }
+
+    private List<String> defaultRestartCmd() {
+        Path javaBin = Paths.get(System.getProperty("java.home"), "bin");
+        Path java = javaBin.resolve(OS.WINDOWS.isCurrent() ? "javaw.exe" : "java");
+        if (!Files.isRegularFile(java)) {
+            java = javaBin.resolve(OS.WINDOWS.isCurrent() ? "java.exe" : "java");
+        }
+        return Arrays.asList(java.toString(), "-jar", bootstrapJar.toAbsolutePath().toString());
     }
 
     private void lowerRequirementsIfNeeded() throws Exception {
@@ -675,121 +571,39 @@ public final class Bootstrap {
         }
     }
 
-    private UpdateMeta.ConnectionInterrupter createInterrupter() {
-        if (ui instanceof UserInterface) {
-            return ((UserInterface) ui).createInterrupter();
-        }
-        return null;
-    }
-
-    private void addUpdateMessage(RemoteLauncherMeta remoteLauncherMeta) {
-        Map<String, String> description = remoteLauncherMeta.getDescription();
-        if (description == null) {
-            return;
-        }
-        String updateTitle = UserInterface.getLString("update.launcher.title", "Launcher was updated");
-        Version version = remoteLauncherMeta.getVersion();
-        ipc.addLauncherReleaseNotes(version.toString(), updateTitle, description);
-    }
-
     private void printVersion(LocalLauncherMeta localLauncherMeta) {
         HeadlessInterface.printVersion(LocalBootstrapMeta.getInstance().getVersion().toString(), localLauncherMeta == null ? null : localLauncherMeta.getVersion().toString());
     }
 
-    private Task<LocalLauncherTask> getLocalLauncher(final RemoteLauncher remote) {
+    private Task<LocalLauncherTask> getLocalLauncher() {
         return new Task<LocalLauncherTask>("getLocalLauncher") {
             @Override
             protected LocalLauncherTask execute() throws Exception {
                 updateProgress(0.);
                 log.info("Getting local launcher...");
 
-                RemoteLauncherMeta remoteLauncherMeta = remote == null ? null : Objects.requireNonNull(remote.getMeta(), "RemoteLauncherMeta");
-
-                LocalLauncher local;
-                try {
-                    local = new LocalLauncher(getTargetJar(), getTargetLibFolder());
-                } catch (LauncherNotFoundException lnfE) {
-                    log.error("Could not find local launcher:", lnfE);
-
-                    if (internal == null) {
-                        local = null;
-                    } else {
-                        log.warn("... replacing it with internal one: {}", internal);
-                        local = bindTo(internal.toLocalLauncher(getTargetJar(), getTargetLibFolder()), .0, .1);
-                    }
+                Path targetJar = getTargetJar();
+                if (internal == null) {
+                    // dev runs and packages that ship the launcher next to the bootstrap
+                    return new LocalLauncherTask(new LocalLauncher(targetJar, getTargetLibFolder()));
                 }
 
-                Path file = local != null ? local.getFile() : getTargetJar();
-
-                if (local != null) {
-                    if (remote == null) {
-                        log.warn("We have local launcher, but have no remote.");
-                        return new LocalLauncherTask(local);
-                    }
-
-                    LocalLauncherMeta localLauncherMeta;
-
-                    try {
-                        localLauncherMeta = Objects.requireNonNull(local.getMeta(), "LocalLauncherMeta");
-                    } catch (IOException ioE) {
-                        log.error("Could not get local launcher meta:", ioE);
-                        localLauncherMeta = null;
-                    }
-
-                    updateProgress(.2);
-
-                    boolean doUpdate = false;
-
-                    if (localLauncherMeta != null) {
-                        Objects.requireNonNull(localLauncherMeta.getShortBrand(), "LocalLauncher shortBrand");
-                        Objects.requireNonNull(localLauncherMeta.getBrand(), "LocalLauncher brand");
-
-                        if (!localLauncherMeta.getVersion().equals(remote.getMeta().getVersion())) {
-                            log.info("Local version doesn't match remote");
-                            if (localLauncherMeta.getVersion().isHigherThan(remote.getMeta().getVersion())) {
-                                log.warn("Local launcher is newer than the remote one. We'll use local version this time.");
-                                log.warn("This might be reverted in the future updates");
-                            } else if (getIgnoreUpdate()) {
-                                log.info("... nevermind");
-                            } else {
-                                doUpdate = true;
-                            }
-                        } else if (!getIgnoreUpdate()) {
-                            String localLauncherHash = Sha256Sign.calc(local.getFile());
-                            log.info("Local SHA256: {}", localLauncherHash);
-                            log.info("Remote SHA256: {}", remoteLauncherMeta.getChecksum());
-
-                            if (!localLauncherHash.equalsIgnoreCase(remoteLauncherMeta.getChecksum())) {
-                                log.warn("... local SHA256 checksum is not the same as remote");
-                                doUpdate = true;
-                            } else {
-                                log.info("All done, local launcher is up to date.");
-                            }
-                        }
-
-                        if (!doUpdate) {
-                            return new LocalLauncherTask(local);
-                        }
-                    }
-
-                    updateProgress(.5);
+                String embeddedChecksum = internal.getChecksum();
+                if (Files.isRegularFile(targetJar) && embeddedChecksum.equalsIgnoreCase(Sha256Sign.calc(targetJar))) {
+                    log.info("Local launcher matches the embedded one");
+                    return new LocalLauncherTask(new LocalLauncher(targetJar, getTargetLibFolder()));
                 }
 
-                if (remote == null) {
-                    throw new LauncherNotFoundException("could not retrieve any launcher");
+                if (getIgnoreUpdate()) {
+                    log.warn("Can't write {}, running the embedded launcher from a temporary file", targetJar);
+                    return new LocalLauncherTask(new LocalLauncher(internal.getTempFile(), getTargetLibFolder()));
                 }
 
-                LocalLauncher fromRemote;
-                try {
-                    fromRemote = bindTo(remote.toLocalLauncher(file, getTargetLibFolder()), .5, 1.);
-                } catch (IOException ioE) {
-                    if (local == null) {
-                        throw ioE;
-                    }
-                    return new LocalLauncherTask(local);
-                }
-
-                return new LocalLauncherTask(fromRemote, true);
+                log.info("Extracting the embedded launcher to {}", targetJar);
+                return new LocalLauncherTask(
+                        bindTo(internal.toLocalLauncher(targetJar, getTargetLibFolder()), .0, 1.),
+                        true
+                );
             }
         };
     }
@@ -808,7 +622,7 @@ public final class Bootstrap {
             }
             if (brokenPath != null) {
                 appendLine(message, "Please do not run (any) Java application which path contains folder name that ends with «!»");
-                appendLine(message, "Не запускайте Java-приложения в директориях, чей путь содержит «!». Переместите Legacy Launcher в другую папку.");
+                appendLine(message, "Не запускайте Java-приложения в директориях, чей путь содержит «!». Переместите Lonely Launcher в другую папку.");
             }
             if (tempDirUnwriteable) {
                 appendLine(message, "Could not access temporary folder. Please check your hard drive.");

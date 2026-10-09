@@ -198,18 +198,20 @@ public class LegacyLauncherFrame extends JFrame {
             brandBuilder.append(U.getMinorVersion(LegacyLauncher.getVersion())).append(" ");
         }
 
-        brandBuilder.append("[").append(BuildConfig.FULL_BRAND).append("]");
+        if (!BuildConfig.FULL_BRAND.isEmpty()) {
+            brandBuilder.append("[").append(BuildConfig.FULL_BRAND).append("]");
+        }
 
         if (LegacyLauncher.getInstance().isDebug()) {
             brandBuilder.append(" [DEBUG]");
         }
 
-        brand = brandBuilder.toString();
+        brand = brandBuilder.toString().trim();
     }
 
     public void setWindowTitle() {
         updateBrand();
-        final String locTitle = Localizable.get("title");
+        final String locTitle = BuildConfig.PRODUCT_NAME;
         String title;
         if (LegacyLauncher.getInstance().isDebug()) {
             title = String.format(java.util.Locale.ROOT, "%s %s [%s]", locTitle, brand, U.memoryStatus());

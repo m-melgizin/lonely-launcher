@@ -17,6 +17,7 @@ class LegacyLauncherBrandPlugin : Plugin<Project> {
                 "mcl" -> "for Mc-launcher.com"
                 "aur" -> "AUR"
                 "appt" -> "для AppStorrent"
+                "lonely" -> ""
                 else -> brand
             }
         })
@@ -25,5 +26,9 @@ class LegacyLauncherBrandPlugin : Plugin<Project> {
         })
 
         extension.supportEmail.convention("support@llaun.ch")
+        extension.productName.convention("Lonely Launcher")
+        extension.updateRepository.convention(
+            System.getenv("UPDATE_REPOSITORY") ?: System.getenv("GITHUB_REPOSITORY") ?: "m-melgizin/legacy-launcher"
+        )
     }
 }
