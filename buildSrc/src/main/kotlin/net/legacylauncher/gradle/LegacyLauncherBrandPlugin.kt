@@ -31,7 +31,7 @@ class LegacyLauncherBrandPlugin : Plugin<Project> {
         extension.supportEmail.convention("support@lonelycraft.ru")
         extension.productName.convention("Lonely Launcher")
         extension.updateRepository.convention(
-            System.getenv("UPDATE_REPOSITORY") ?: System.getenv("GITHUB_REPOSITORY") ?: "m-melgizin/legacy-launcher"
+            System.getenv("UPDATE_REPOSITORY") ?: System.getenv("GITHUB_REPOSITORY") ?: "m-melgizin/lonely-launcher"
         )
         extension.logUploadEnabled.convention(project.featureToggle("logUpload"))
         extension.helpLinksEnabled.convention(project.featureToggle("helpLinks"))

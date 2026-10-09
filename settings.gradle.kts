@@ -4,7 +4,7 @@ plugins {
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-rootProject.name = "legacy-launcher"
+rootProject.name = "lonely-launcher"
 
 include(":utils")
 include(":bootstrap")

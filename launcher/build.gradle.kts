@@ -131,7 +131,7 @@ fun writeMeta(file: File, content: Map<String, Any>) {
     }
 }
 
-// git submodule: https://github.com/m-melgizin/legacy-launcher-translations
+// git submodule: https://github.com/m-melgizin/lonely-launcher-translations
 val translationsDir = layout.projectDirectory.dir("translations")
 
 val checkTranslations by tasks.registering {

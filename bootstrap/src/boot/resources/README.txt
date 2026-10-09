@@ -23,7 +23,7 @@ Have troubles? Or questions? Need help? Here is some useful links:
   Our support e-mail: support@lonelycraft.ru
 
 Lonely Launcher download link (Windows, Linux, macOS):
-  https://github.com/m-melgizin/legacy-launcher/releases/latest/download/LonelyLauncher.jar
+  https://github.com/m-melgizin/lonely-launcher/releases/latest/download/LonelyLauncher.jar
 
 
 

@@ -23,7 +23,7 @@ TL;DR: Открылся этот файл вместо лаунчера? Зап�
   Наш адрес электронной почты: support@lonelycraft.ru
 
 Ссылка на загрузку Lonely Launcher (Windows, Linux, macOS):
-  https://github.com/m-melgizin/legacy-launcher/releases/latest/download/LonelyLauncher.jar
+  https://github.com/m-melgizin/lonely-launcher/releases/latest/download/LonelyLauncher.jar
 
 
 
