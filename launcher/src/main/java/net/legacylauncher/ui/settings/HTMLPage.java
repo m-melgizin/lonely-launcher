@@ -1,6 +1,7 @@
 package net.legacylauncher.ui.settings;
 
 import lombok.extern.slf4j.Slf4j;
+import net.legacylauncher.configuration.BuildConfig;
 import net.legacylauncher.ui.loc.Localizable;
 import net.legacylauncher.ui.loc.LocalizableComponent;
 import net.legacylauncher.ui.swing.MagnifiedInsets;
@@ -80,6 +81,9 @@ public class HTMLPage extends BorderPanel implements LocalizableComponent {
         }
 
         public String resolveToken(String token) {
+            if (token.equals("product")) {
+                return BuildConfig.PRODUCT_NAME;
+            }
             if (token.equals("width")) {
                 return String.valueOf(SwingUtil.magnify(555));
             }
