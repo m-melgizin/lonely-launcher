@@ -264,7 +264,7 @@ public class LegacyLauncherFrame extends JFrame {
     private void updateUILocale() {
         if (uiConfig == null) {
             try {
-                uiConfig = new SimpleConfiguration(getClass().getResource("/lang/_ui.properties"));
+                uiConfig = new SimpleConfiguration(getClass().getResource(LangConfiguration.LOCALE_PATH + "/_ui.properties"));
             } catch (Exception var4) {
                 return;
             }

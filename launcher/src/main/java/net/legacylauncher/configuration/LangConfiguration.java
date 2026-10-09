@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 @Slf4j
 public final class LangConfiguration {
     public static final Locale ru_RU = U.getLocale("ru_RU");
-    private static final String LOCALE_PATH = "/net/legacylauncher/lang";
+    public static final String LOCALE_PATH = "/net/legacylauncher/lang";
     private static final Lazy<List<Locale>> localeList = Lazy.of(() -> {
         URL url = LangConfiguration.class.getResource(LOCALE_PATH);
         if (url == null) {

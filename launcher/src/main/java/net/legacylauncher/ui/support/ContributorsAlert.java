@@ -28,14 +28,14 @@ public final class ContributorsAlert {
             return;
         }
         if (contributors == null) {
-            try (InputStream is = ContributorsAlert.class.getResourceAsStream("/lang/_contrib.json")) {
+            try (InputStream is = ContributorsAlert.class.getResourceAsStream(LangConfiguration.LOCALE_PATH + "/_contrib.json")) {
                 assert is != null;
                 InputStreamReader reader = new InputStreamReader(is, StandardCharsets.UTF_8);
                 contributors = new GsonBuilder().create().fromJson(reader, JsonObject.class);
             }
         }
         if (proofreaders == null) {
-            proofreaders = new SimpleConfiguration(ContributorsAlert.class.getResource("/lang/_proofr.properties"));
+            proofreaders = new SimpleConfiguration(ContributorsAlert.class.getResource(LangConfiguration.LOCALE_PATH + "/_proofr.properties"));
         }
 
         Configuration settings = LegacyLauncher.getInstance().getSettings();

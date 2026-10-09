@@ -131,11 +131,32 @@ fun writeMeta(file: File, content: Map<String, Any>) {
     }
 }
 
+// git submodule: https://github.com/m-melgizin/legacy-launcher-translations
+val translationsDir = layout.projectDirectory.dir("translations")
+
+val checkTranslations by tasks.registering {
+    val sentinel = translationsDir.file("lang_en_US.properties").asFile
+    doLast {
+        if (!sentinel.isFile) {
+            throw GradleException(
+                "Translations are missing in ${sentinel.parentFile}. " +
+                        "Run `git submodule update --init` to fetch them."
+            )
+        }
+    }
+}
+
 val processResources by tasks.getting(ProcessResources::class) {
     inputs.property("productVersion", brand.version.get())
     inputs.property("shortBrand", brand.brand.get())
     inputs.property("fullBrand", brand.displayName.get())
     inputs.files(launcherLibraries)
+
+    dependsOn(checkTranslations)
+    from(translationsDir) {
+        include("lang_*.properties", "_*.properties", "_contrib.json")
+        into("net/legacylauncher/lang")
+    }
 
     doLast {
         val meta = mapOf(
