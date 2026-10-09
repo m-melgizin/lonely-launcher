@@ -58,8 +58,6 @@ public final class ConfigurationDefaults {
 
         d.put("minecraft.xmx", "auto");
 
-        d.put("minecraft.servers.promoted", true);
-        d.put("minecraft.servers.promoted.ingame", true);
 
         d.put("minecraft.onlaunch", Configuration.ActionOnLaunch.HIDE);
 
@@ -80,9 +78,6 @@ public final class ConfigurationDefaults {
         d.put("gui.logger.x", 30);
         d.put("gui.logger.y", 30);
 
-        d.put("gui.notices.enabled", true);
-        d.put("notice.promoted", true);
-        d.put("notice.enabled", true);
 
         d.put("gui.direction.loginform", Direction.CENTER);
 

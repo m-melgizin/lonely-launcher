@@ -3,10 +3,8 @@ package net.legacylauncher.stats;
 import lombok.extern.slf4j.Slf4j;
 import net.legacylauncher.LegacyLauncher;
 import net.legacylauncher.configuration.BuildConfig;
-import net.legacylauncher.minecraft.PromotedServerAddStatus;
 import net.legacylauncher.minecraft.Server;
 import net.legacylauncher.minecraft.auth.Account;
-import net.legacylauncher.ui.notice.Notice;
 import net.legacylauncher.util.OS;
 import net.legacylauncher.util.U;
 import net.legacylauncher.util.ua.LauncherUserAgent;
@@ -42,12 +40,11 @@ public final class Stats {
         submitDenunciation(newAction("beacon"));
     }
 
-    public static void minecraftLaunched(Account<?> account, CompleteVersion version, Server server, int serverId, PromotedServerAddStatus promotionStatus) {
+    public static void minecraftLaunched(Account<?> account, CompleteVersion version, Server server, int serverId) {
         Stats.Args args = newAction("mc_launched")
                 .add("mc_version", version.getID())
                 .add("username", account.getDisplayName())
-                .add("account_type", account.getType().toString())
-                .add("promotion_status", promotionStatus.toString());
+                .add("account_type", account.getType().toString());
         if (server != null) {
             args.add("server", server.getFullAddress());
         }
@@ -56,24 +53,6 @@ public final class Stats {
         }
 
         submitDenunciation(args);
-    }
-
-    public static void noticeViewed(Notice notice) {
-    }
-
-    public static void noticeListViewed(List<Notice> list) {
-    }
-
-    public static void noticeHiddenByUser(Notice notice) {
-    }
-
-    public static void noticeShownByUser(Notice notice) {
-    }
-
-    public static void noticeStatusUpdated(boolean enabled) {
-    }
-
-    public static void noticeSceneShown() {
     }
 
     public static void feedbackStarted() {
@@ -88,13 +67,6 @@ public final class Stats {
     public static Future<?> reportSessionDuration(long sessionStartTimeMillis) {
         long durationSeconds = (System.currentTimeMillis() - sessionStartTimeMillis) / 1000L;
         return submitDenunciation(newAction("session_duration").add("duration", String.valueOf(durationSeconds)));
-    }
-
-    public static void submitNoticeStatus(boolean enabled) {
-    }
-
-    public static void showInterestInBuying(String promotedStoreId) {
-        submitDenunciation(newAction("interested_in_buying").add("promoted_store_id", promotedStoreId));
     }
 
     public static void jarscannedCompleted(long seconds) {

@@ -1,15 +1,10 @@
 package net.legacylauncher.ui.account;
 
-import lombok.extern.slf4j.Slf4j;
 import net.legacylauncher.LegacyLauncher;
-import net.legacylauncher.configuration.LangConfiguration;
-import net.legacylauncher.managers.PromotedStoreManager;
-import net.legacylauncher.stats.Stats;
 import net.legacylauncher.ui.block.Blockable;
 import net.legacylauncher.ui.block.Blocker;
 import net.legacylauncher.ui.frames.RequireMinecraftAccountFrame;
 import net.legacylauncher.ui.images.Images;
-import net.legacylauncher.ui.loc.Localizable;
 import net.legacylauncher.ui.loc.LocalizableButton;
 import net.legacylauncher.ui.loc.LocalizableComponent;
 import net.legacylauncher.ui.scenes.AccountManagerScene;
@@ -25,7 +20,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 
-@Slf4j
 public class AccountAdd extends BorderPanel implements AccountMultipaneCompCloseable, Blockable, LocalizableComponent {
 
     private final AccountManagerScene scene;
@@ -33,7 +27,7 @@ public class AccountAdd extends BorderPanel implements AccountMultipaneCompClose
     private final ExtendedPanel grid;
     private final GridBagConstraints c;
 
-    private final LocalizableButton minecraft, ely, free, idontknow, promotedStore;
+    private final LocalizableButton minecraft, ely, free, idontknow;
 
     private final boolean requireMinecraftAccount;
 
@@ -58,15 +52,7 @@ public class AccountAdd extends BorderPanel implements AccountMultipaneCompClose
         ely = addRow("logo-ely", ACCOUNT_TYPE_PREFIX + "ely", createListenerFor("add-account-ely", false));
         minecraft = addRow("logo-microsoft", ACCOUNT_TYPE_PREFIX + "minecraft", createListenerFor("process-account-minecraft", true));
 
-        promotedStore = addRow("gift-1", LOC_PREFIX + "buy-minecraft", e -> {
-            PromotedStoreManager.Info minecraftStore = new PromotedStoreManager.Info("minecraft", "https://minecraft.net");
-            PromotedStoreManager.Info promotedStore = psm().getInfoNow().orElse(minecraftStore);
-            Stats.showInterestInBuying(promotedStore.getId());
-            OS.openLink(promotedStore.getUrl());
-            if (promotedStore != minecraftStore && scene.getMainPane().getRootFrame().getLauncher().getSettings().getInteger("feedback.promotedStore", -1) < 0) {
-                scene.getMainPane().getRootFrame().getLauncher().getSettings().set("feedback.promotedStore", 0);
-            }
-        });
+        addRow("gift-1", LOC_PREFIX + "buy-minecraft", e -> OS.openLink("https://minecraft.net"));
 
         free = addRow("user-circle-o", ACCOUNT_TYPE_PREFIX + "free", createListenerFor("add-account-plain", false));
         idontknow = addRow("info-circle", LOC_PREFIX + "hint", e -> Blocker.toggle(AccountAdd.this, "idontknow"));
@@ -169,33 +155,5 @@ public class AccountAdd extends BorderPanel implements AccountMultipaneCompClose
 
     @Override
     public void updateLocale() {
-        if (!scene.getMainPane().getRootFrame().getLauncher().getLang().getLocale().equals(LangConfiguration.ru_RU)) {
-            promotedStore.setEnabled(true);
-            return;
-        }
-        promotedStore.setEnabled(false);
-        psm().requestOrGetInfo().whenComplete((info, t) -> {
-            if (info != null) {
-                SwingUtil.later(() -> {
-                    String text = info.getText().get(Localizable.get().getLocale().toString());
-                    if (text == null) {
-                        text = info.getText().get("en_US");
-                    }
-                    if (text == null) {
-                        text = Localizable.get(LOC_PREFIX + "buy-minecraft");
-                    }
-                    if (text == null) {
-                        log.warn("promoted store text is null");
-                    } else {
-                        promotedStore.setText(text);
-                    }
-                });
-            }
-            SwingUtil.later(() -> promotedStore.setEnabled(true));
-        });
-    }
-
-    private PromotedStoreManager psm() {
-        return scene.getMainPane().getRootFrame().getLauncher().getPromotedStoreManager();
     }
 }

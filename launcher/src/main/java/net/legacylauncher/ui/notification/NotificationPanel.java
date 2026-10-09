@@ -1,9 +1,6 @@
 package net.legacylauncher.ui.notification;
 
-import net.legacylauncher.LegacyLauncher;
 import net.legacylauncher.ui.images.ImageIcon;
-import net.legacylauncher.ui.loc.Localizable;
-import net.legacylauncher.ui.loc.LocalizableComponent;
 import net.legacylauncher.ui.swing.extended.ExtendedButton;
 import net.legacylauncher.ui.swing.extended.ExtendedPanel;
 import net.legacylauncher.util.SwingUtil;
@@ -15,7 +12,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class NotificationPanel extends ExtendedPanel implements LocalizableComponent {
+public class NotificationPanel extends ExtendedPanel {
     public static final int GAP = SwingUtil.magnify(10);
 
     private final int buttonSize = SwingUtil.magnify(48);
@@ -26,7 +23,6 @@ public class NotificationPanel extends ExtendedPanel implements LocalizableCompo
 
     public NotificationPanel() {
         setLayout(new FlowLayout(FlowLayout.LEFT, GAP, GAP));
-        updateLocale();
     }
 
     public void addNotification(String id, Notification notification) {
@@ -73,25 +69,5 @@ public class NotificationPanel extends ExtendedPanel implements LocalizableCompo
             revalidate();
             repaint();
         });
-    }
-
-    private String localeNotificationId;
-
-    @Override
-    public void updateLocale() {
-        if (localeNotificationId != null) {
-            removeNotification(localeNotificationId);
-            localeNotificationId = null;
-        }
-        UrlNotificationObject notificationObject = LegacyLauncher.getInstance().getBootConfig()
-                .getNotifications().get(Localizable.get().getLocale().toString());
-        if (notificationObject != null) {
-            addNotification(notificationObject.getId(), new Notification(
-                    notificationObject.getImage(),
-                    new NotificationListener.UrlOpen(notificationObject.getUrl())
-                            .then(new NotificationListener.Remove(this, notificationObject.getId()))
-            ));
-            localeNotificationId = notificationObject.getId();
-        }
     }
 }

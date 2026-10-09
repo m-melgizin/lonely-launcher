@@ -53,19 +53,6 @@ public class NewFeaturesFrame extends VActionFrame {
         getFooter().setLayout(new BorderLayout());
         getFooter().add(okayButton, "East");
 
-        /*final ActionListener listener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (newNoticeList.isSelected() || promotedServers.isSelected()) {
-                    okayButton.setText("newfeatures.button.okay");
-                } else {
-                    okayButton.setText("newfeatures.button.nope");
-                }
-            }
-        };
-        newNoticeList.addActionListener(listener);
-        promotedServers.addActionListener(listener);*/
-
         okayButton.addActionListener(e -> frame.getConfiguration().set("gui.features", NewFeaturesFrame.INCREMENTAL));
 
         pack();
