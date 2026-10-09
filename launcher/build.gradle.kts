@@ -77,7 +77,6 @@ dependencies {
     implementation(libs.jackson.core)
     implementation(libs.jarscanner)
     implementation(libs.java.semver)
-    implementation(libs.java.statsd.client)
     implementation(libs.jdom)
     implementation(libs.jopt.simple)
     implementation(libs.jvd)

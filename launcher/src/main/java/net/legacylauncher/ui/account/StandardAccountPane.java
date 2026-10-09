@@ -4,7 +4,6 @@ import net.legacylauncher.LegacyLauncher;
 import net.legacylauncher.minecraft.auth.Account;
 import net.legacylauncher.minecraft.auth.Authenticator;
 import net.legacylauncher.minecraft.auth.AuthenticatorListener;
-import net.legacylauncher.stats.Stats;
 import net.legacylauncher.ui.alert.Alert;
 import net.legacylauncher.ui.block.Blocker;
 import net.legacylauncher.ui.images.Images;
@@ -190,7 +189,6 @@ public abstract class StandardAccountPane<T extends StandardAuth<Y>, Y extends U
             @Override
             public void onAuthPassingError(Authenticator<? extends Y> var1, Throwable var2) {
                 if (session == currentSession) {
-                    Stats.accountCreation(accountType.toString().toLowerCase(java.util.Locale.ROOT), "standard", "", false);
                     Blocker.unblockComponents(StandardAccountPane.this, "user-pass");
                     progressBar.setIndeterminate(false);
                 }
@@ -207,7 +205,6 @@ public abstract class StandardAccountPane<T extends StandardAuth<Y>, Y extends U
                     switch (mode) {
                         case ADD:
                             removeAccountIfFound(account.getUsername());
-                            Stats.accountCreation(accountType.toString().toLowerCase(java.util.Locale.ROOT), "standard", "", true);
                             break;
                         case EDIT:
                             User newUser = account.getUser();

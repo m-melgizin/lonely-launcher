@@ -10,7 +10,6 @@ import net.legacylauncher.configuration.SimpleConfiguration;
 import net.legacylauncher.portals.Portals;
 import net.legacylauncher.ui.alert.Alert;
 import net.legacylauncher.ui.block.Blocker;
-import net.legacylauncher.ui.frames.FeedbackFrame;
 import net.legacylauncher.ui.loc.Localizable;
 import net.legacylauncher.ui.loc.LocalizableMenuItem;
 import net.legacylauncher.ui.swing.extended.ExtendedComponentAdapter;
@@ -87,24 +86,8 @@ public class LegacyLauncherFrame extends JFrame {
 
             @Override
             public void windowClosing(WindowEvent e) {
-                if (settings.getBoolean("feedback") || legacyLauncher.getBootConfig().getFeedback() == null) {
-                    instance.setVisible(false);
-                    LegacyLauncher.kill();
-                    return;
-                }
-
-                String url;
-                if (legacyLauncher.getBootConfig().getFeedback().containsKey(legacyLauncher.getSettings().getLocale().toString())) {
-                    url = legacyLauncher.getBootConfig().getFeedback().get(legacyLauncher.getSettings().getLocale().toString());
-                } else if (legacyLauncher.getBootConfig().getFeedback().containsKey("global")) {
-                    url = legacyLauncher.getBootConfig().getFeedback().get("global");
-                } else {
-                    instance.setVisible(false);
-                    LegacyLauncher.kill();
-                    return;
-                }
-                settings.set("feedback", true);
-                new FeedbackFrame(LegacyLauncherFrame.this, url);
+                instance.setVisible(false);
+                LegacyLauncher.kill();
             }
         });
         addComponentListener(new ExtendedComponentAdapter(this) {

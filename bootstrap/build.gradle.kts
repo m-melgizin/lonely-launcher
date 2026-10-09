@@ -71,7 +71,6 @@ dependencies {
     implementation(libs.flatlaf)
     implementation(libs.gson)
     implementation(libs.java.semver)
-    implementation(libs.java.statsd.client)
     implementation(libs.jopt.simple)
     implementation(libs.oshi)
     implementation(libs.slf4j.api)

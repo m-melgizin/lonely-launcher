@@ -21,7 +21,6 @@ import net.legacylauncher.minecraft.launcher.MinecraftLauncher;
 import net.legacylauncher.minecraft.launcher.MinecraftListener;
 import net.legacylauncher.portals.Portals;
 import net.legacylauncher.repository.Repository;
-import net.legacylauncher.stats.Stats;
 import net.legacylauncher.ui.FlatLaf;
 import net.legacylauncher.ui.LegacyLauncherFrame;
 import net.legacylauncher.ui.alert.Alert;
@@ -38,7 +37,6 @@ import net.legacylauncher.user.ElyUser;
 import net.legacylauncher.user.PlainUser;
 import net.legacylauncher.user.User;
 import net.legacylauncher.util.*;
-import net.legacylauncher.util.async.AsyncThread;
 import net.legacylauncher.util.logging.DelegateServiceProvider;
 import net.legacylauncher.util.shared.FlatLafConfiguration;
 import org.apache.commons.io.FileUtils;
@@ -56,7 +54,6 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -103,7 +100,6 @@ public final class LegacyLauncher {
     private final Downloader downloader;
     @Getter
     private final UIListeners uiListeners;
-    private final long sessionStartTime;
     private final Object onReadySync = new Object();
     private SwingLogger loggerUI;
     @Getter
@@ -161,7 +157,6 @@ public final class LegacyLauncher {
         this.bootConfigEmpty = bootConfigEmpty;
 
         Repository.updateList(bootConfig.getRepositories());
-        Stats.setAllowed(bootConfig.isStatsAllowed());
 
         bootstrapIPC.onBootProgress("Handling run conditions", 0.17);
         handleWorkdir();
@@ -208,7 +203,6 @@ public final class LegacyLauncher {
         });
 
         ready = true;
-        sessionStartTime = System.currentTimeMillis();
 
         bootstrapIPC.onBootSucceeded();
 
@@ -372,7 +366,6 @@ public final class LegacyLauncher {
                 return; // not affected
             }
             if (found) {
-                Stats.fractureiserTraceDetected();
                 Alert.showWarning("", Localizable.get("fractureiser.detected"));
             }
         });
@@ -427,10 +420,6 @@ public final class LegacyLauncher {
         legacyLauncher.frame.setVisible(false);
 
         Collection<AutoCloseable> closeables = new ArrayList<>();
-        closeables.add(() -> {
-            // report and wait 5 seconds
-            Stats.reportSessionDuration(legacyLauncher.sessionStartTime).get(5, TimeUnit.SECONDS);
-        });
         closeables.add(legacyLauncher.gpuManager);
         closeables.add(Portals.getPortal());
         closeables.add(legacyLauncher.bootstrapIPC);
@@ -742,11 +731,6 @@ public final class LegacyLauncher {
         }
 
         profileManager.refresh();
-
-        AsyncThread.DELAYER.scheduleWithFixedDelay(
-                () -> AsyncThread.execute(Stats::beacon),
-                30, 30, TimeUnit.MINUTES
-        );
     }
 
     private void preloadUI() {

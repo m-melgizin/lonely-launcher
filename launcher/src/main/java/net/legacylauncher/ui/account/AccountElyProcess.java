@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.legacylauncher.LegacyLauncher;
 import net.legacylauncher.managers.AccountManager;
 import net.legacylauncher.minecraft.auth.Account;
-import net.legacylauncher.stats.Stats;
 import net.legacylauncher.ui.alert.Alert;
 import net.legacylauncher.ui.images.Images;
 import net.legacylauncher.ui.loc.LocalizableButton;
@@ -163,7 +162,6 @@ public class AccountElyProcess extends BorderPanel implements AccountMultipaneCo
 
             @Override
             public void strategyErrored(ElyAuthFlow<?> strategy, Exception e) {
-                Stats.accountCreation("ely", "primary", "", false);
                 setState(FlowState.ERROR);
             }
 
@@ -174,20 +172,17 @@ public class AccountElyProcess extends BorderPanel implements AccountMultipaneCo
 
             @Override
             public void strategyUrlOpeningFailed(ElyAuthFlow<?> strategy, URL url) {
-                Stats.accountCreation("ely", "primary", "url_opening", false);
                 setState(FlowState.ERROR);
             }
 
             @Override
             public void strategyCancelled(ElyAuthFlow<?> strategy) {
-                Stats.accountCreation("ely", "primary", "cancelled", false);
                 setState(FlowState.CANCELLED);
             }
 
             @Override
             public void strategyComplete(ElyAuthFlow<?> strategy, ElyAuthCode code) {
                 fetchCode("primary", code);
-                Stats.accountCreation("ely", "primary", "", true);
             }
         });
         authProcess = AsyncThread.future(primaryFlow);
@@ -213,7 +208,6 @@ public class AccountElyProcess extends BorderPanel implements AccountMultipaneCo
 
             @Override
             public void strategyErrored(ElyAuthFlow<?> strategy, Exception e) {
-                Stats.accountCreation("ely", "fallback", "", false);
                 setState(FlowState.ERROR);
             }
 
@@ -224,19 +218,16 @@ public class AccountElyProcess extends BorderPanel implements AccountMultipaneCo
 
             @Override
             public void strategyUrlOpeningFailed(ElyAuthFlow<?> strategy, URL url) {
-                Stats.accountCreation("ely", "fallback", "url_opening", false);
                 setState(FlowState.ERROR);
             }
 
             @Override
             public void strategyCancelled(ElyAuthFlow<?> strategy) {
-                Stats.accountCreation("ely", "fallback", "cancelled", false);
                 setState(FlowState.CANCELLED);
             }
 
             @Override
             public void strategyComplete(ElyAuthFlow<?> strategy, ElyAuthCode code) {
-                Stats.accountCreation("ely", "fallback", "", true);
                 fetchCode("fallback", code);
             }
         });

@@ -19,7 +19,6 @@ import net.legacylauncher.minecraft.*;
 import net.legacylauncher.minecraft.auth.Account;
 import net.legacylauncher.minecraft.crash.CrashManager;
 import net.legacylauncher.minecraft.launcher.hooks.GameModeHookLoader;
-import net.legacylauncher.stats.Stats;
 import net.legacylauncher.ui.alert.Alert;
 import net.legacylauncher.ui.loc.Localizable;
 import net.legacylauncher.user.PlainUser;
@@ -1898,7 +1897,6 @@ public class MinecraftLauncher implements JavaProcessListener {
             listener.onMinecraftPostLaunch();
         }
 
-        Stats.minecraftLaunched(account, version, server, serverId);
         if (assistLaunch) {
             log.info("Waiting child process to close");
             waitForClose();
@@ -2311,11 +2309,6 @@ public class MinecraftLauncher implements JavaProcessListener {
                                         log.warn("jarscanner detected in {}: {}", file, infectedEntry);
                                         found.set(true);
 //                                service.shutdownNow();
-                                        Stats.jarscannedDetected(
-                                                file.getFileName().toString(),
-                                                infectedEntry,
-                                                FileUtil.getChecksum(file.toFile(), "SHA-256")
-                                        );
                                     })
                     );
                     return FileVisitResult.CONTINUE;
@@ -2359,7 +2352,6 @@ public class MinecraftLauncher implements JavaProcessListener {
         }
         long delta = System.currentTimeMillis() - startTime;
         log.info("jarscanner done in {} ms", delta);
-        Stats.jarscannedCompleted(delta / 1000L);
         if (found.get()) {
             log.warn("jarscanner has detected malware signatures");
             settings.set("jarscanner", 0); // try again
