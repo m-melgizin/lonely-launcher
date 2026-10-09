@@ -17,6 +17,13 @@ public abstract class BindableAction {
 
     public abstract void execute(String arg) throws Exception;
 
+    /**
+     * @return the link this action opens with the given argument, if any
+     */
+    String getUrl(String arg) {
+        return null;
+    }
+
     Binding bind(String arg) {
         return new Binding(this, arg);
     }
@@ -31,6 +38,11 @@ public abstract class BindableAction {
         @Override
         public void execute() throws Exception {
             BindableAction.this.execute(arg);
+        }
+
+        @Override
+        public String getUrl() {
+            return BindableAction.this.getUrl(arg);
         }
     }
 }

@@ -1,5 +1,6 @@
 package net.legacylauncher.ui;
 
+import net.legacylauncher.configuration.BuildConfig;
 import net.legacylauncher.LegacyLauncher;
 import net.legacylauncher.managers.ConnectivityManager;
 import net.legacylauncher.ui.alert.Alert;
@@ -209,11 +210,15 @@ public class ConnectivityWarning extends ExtendedFrame implements LocalizableCom
 
         final ConnectivityType type = noConnection ? ConnectivityType.NONE : ConnectivityType.SOME;
         final String bodySuffix = noConnection ? "empty" : "text";
-        body.setText(String.format(Locale.ROOT, "%s <a href=\"%s\">%s</a>",
-                Localizable.get("connectivity.warning.body." + bodySuffix),
-                generateConnectivityLink(type),
-                Localizable.get("connectivity.warning.body.link")
-        ));
+        if (BuildConfig.HELP_LINKS_ENABLED) {
+            body.setText(String.format(Locale.ROOT, "%s <a href=\"%s\">%s</a>",
+                    Localizable.get("connectivity.warning.body." + bodySuffix),
+                    generateConnectivityLink(type),
+                    Localizable.get("connectivity.warning.body.link")
+            ));
+        } else {
+            body.setText(Localizable.get("connectivity.warning.body." + bodySuffix));
+        }
         body.setPreferredSize(new Dimension(WIDTH_BORDERED, SwingUtil.getPrefHeight(body, WIDTH_BORDERED)));
         body.setMaximumSize(new Dimension(WIDTH_BORDERED, SwingUtil.getPrefHeight(body, WIDTH_BORDERED)));
     }

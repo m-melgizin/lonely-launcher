@@ -1,5 +1,6 @@
 package net.legacylauncher.ui.settings;
 
+import net.legacylauncher.configuration.BuildConfig;
 import lombok.extern.slf4j.Slf4j;
 import net.legacylauncher.LegacyLauncher;
 import net.legacylauncher.jre.JavaRuntimeLocal;
@@ -438,8 +439,10 @@ public class JRESettingsWindow extends ExtendedFrame implements LocalizableCompo
         recommendedPathHint.setInsets(new Insets(SwingUtil.magnify(5), 0, 0, 0));
         recommendedPathHint.setLayout(new BoxLayout(recommendedPathHint, BoxLayout.Y_AXIS));
         recommendedPathHint.add(recommendedPathHint0);
-        recommendedPathHint.add(Box.createRigidArea(new Dimension(0, SwingUtil.magnify(2))));
-        recommendedPathHint.add(recommendedPathHint1);
+        if (BuildConfig.HELP_LINKS_ENABLED) {
+            recommendedPathHint.add(Box.createRigidArea(new Dimension(0, SwingUtil.magnify(2))));
+            recommendedPathHint.add(recommendedPathHint1);
+        }
         BorderPanel recommendedPath = new BorderPanel();
         recommendedPath.setCenter(recommendedPathField);
         recommendedPath.setEast(recommendedPathButton);

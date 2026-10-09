@@ -1,5 +1,6 @@
 package net.legacylauncher.bootstrap.ui;
 
+import net.legacylauncher.bootstrap.BuildConfig;
 import net.legacylauncher.bootstrap.exception.FatalExceptionType;
 import net.legacylauncher.bootstrap.ui.message.*;
 
@@ -39,7 +40,7 @@ final class FatalExceptionHandler {
 
     private void contactDirectly() {
         host.showMessage(new BiButtonMessage(
-                b.getString("contact-directly.save-logs"),
+                text("contact-directly.save-logs"),
                 new Button(
                         b.getString("contact-directly.save-logs.yes"),
                         () -> new SaveLogsAction(host).run()
@@ -71,12 +72,26 @@ final class FatalExceptionHandler {
                 isUnknown = true;
         }
         FatalExceptionType effective = isUnknown ? FatalExceptionType.UNKNOWN : exceptionType;
-        return b.getString("fatal.type." + effective.nameLowerCase())
+        return text("fatal.type." + effective.nameLowerCase())
                 + "<br/><br/>"
                 + b.getString("fatal.bottom." + (canUsePasta() ? "pasta" : "contact_directly"));
     }
 
+    /**
+     * Picks the "*.no-help-links" variant of the string if links to upstream help pages are disabled.
+     */
+    private String text(String key) {
+        String noHelpLinksKey = key + ".no-help-links";
+        if (!BuildConfig.HELP_LINKS_ENABLED && b.containsKey(noHelpLinksKey)) {
+            return b.getString(noHelpLinksKey);
+        }
+        return b.getString(key);
+    }
+
     private boolean canUsePasta() {
+        if (!BuildConfig.LOG_UPLOAD_ENABLED) {
+            return false;
+        }
         boolean canUsePasta = true;
         switch (exceptionType) {
             case INTERNET_CONNECTIVITY_BLOCKED:

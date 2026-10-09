@@ -282,6 +282,8 @@ buildConfig {
     buildConfigField("String", "VERSION", brand.version.map { "\"$it\"" })
     buildConfigField("String", "PRODUCT_NAME", brand.productName.map { "\"$it\"" })
     buildConfigField("String", "UPDATE_REPOSITORY", brand.updateRepository.map { "\"$it\"" })
+    buildConfigField("boolean", "LOG_UPLOAD_ENABLED", brand.logUploadEnabled.map { it.toString() })
+    buildConfigField("boolean", "HELP_LINKS_ENABLED", brand.helpLinksEnabled.map { it.toString() })
 }
 
 val processBootResources by tasks.getting(ProcessResources::class) {

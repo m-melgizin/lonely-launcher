@@ -265,6 +265,8 @@ buildConfig {
     buildConfigField("String", "VERSION", "\"${brand.version.get()}\"")
     buildConfigField("String", "SUPPORT_EMAIL", "\"${brand.supportEmail.get()}\"")
     buildConfigField("String", "PRODUCT_NAME", "\"${brand.productName.get()}\"")
+    buildConfigField("boolean", "LOG_UPLOAD_ENABLED", brand.logUploadEnabled.map { it.toString() })
+    buildConfigField("boolean", "HELP_LINKS_ENABLED", brand.helpLinksEnabled.map { it.toString() })
 }
 
 val prepareDeploy by tasks.registering {

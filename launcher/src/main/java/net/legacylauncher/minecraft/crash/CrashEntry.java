@@ -2,6 +2,7 @@ package net.legacylauncher.minecraft.crash;
 
 import lombok.extern.slf4j.Slf4j;
 import net.legacylauncher.jna.JNA;
+import net.legacylauncher.util.HelpLinks;
 import net.legacylauncher.util.OS;
 import net.legacylauncher.util.sysinfo.GraphicsCard;
 import net.legacylauncher.util.sysinfo.SystemInfo;
@@ -164,7 +165,14 @@ public class CrashEntry extends IEntry {
     }
 
     protected final void addButton(Button button) {
-        buttons.add(Objects.requireNonNull(button));
+        Objects.requireNonNull(button);
+        for (Action action : button.getActions()) {
+            if (!HelpLinks.isAllowed(action.getUrl())) {
+                log.debug("Hiding button {}: help links are disabled", button.getName());
+                return;
+            }
+        }
+        buttons.add(button);
     }
 
     protected final void clearButtons() {

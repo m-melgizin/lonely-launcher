@@ -15,4 +15,10 @@ interface LegacyLauncherBrandExtension {
 
     /** GitHub repository ("owner/name") whose releases are checked for updates. */
     val updateRepository: Property<String>
+
+    /** Feature toggle `feature.logUpload`: upload logs to pasta.llaun.ch. */
+    val logUploadEnabled: Property<Boolean>
+
+    /** Feature toggle `feature.helpLinks`: show links to upstream help pages. */
+    val helpLinksEnabled: Property<Boolean>
 }

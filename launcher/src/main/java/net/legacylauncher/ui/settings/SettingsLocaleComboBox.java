@@ -7,6 +7,7 @@ import net.legacylauncher.ui.editor.EditorField;
 import net.legacylauncher.ui.loc.LocalizableComponent;
 import net.legacylauncher.ui.swing.extended.BorderPanel;
 import net.legacylauncher.ui.swing.extended.ExtendedLabel;
+import net.legacylauncher.util.HelpLinks;
 import net.legacylauncher.util.OS;
 
 import java.awt.*;
@@ -22,6 +23,8 @@ public class SettingsLocaleComboBox extends BorderPanel implements EditorField, 
     final EditorComboBox<Locale> comboBox;
     final ExtendedLabel hint;
 
+    private static final String TRANSLATIONS_URL = "https://llaun.ch/l10n";
+
     public SettingsLocaleComboBox(SettingsPanel panel) {
         this.panel = panel;
 
@@ -36,10 +39,12 @@ public class SettingsLocaleComboBox extends BorderPanel implements EditorField, 
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                OS.openLink("https://llaun.ch/l10n");
+                OS.openLink(TRANSLATIONS_URL);
             }
         });
-        setSouth(hint);
+        if (HelpLinks.isAllowed(TRANSLATIONS_URL)) {
+            setSouth(hint);
+        }
 
         updateLocale();
     }

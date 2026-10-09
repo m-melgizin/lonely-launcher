@@ -1,5 +1,6 @@
 package net.legacylauncher.ui.support;
 
+import net.legacylauncher.configuration.BuildConfig;
 import net.legacylauncher.ui.frames.VActionFrame;
 import net.legacylauncher.ui.images.Images;
 import net.legacylauncher.ui.loc.Localizable;
@@ -7,6 +8,7 @@ import net.legacylauncher.ui.loc.LocalizableButton;
 import net.legacylauncher.ui.loc.LocalizableCheckbox;
 import net.legacylauncher.ui.swing.extended.ExtendedLabel;
 import net.legacylauncher.ui.swing.extended.ExtendedPanel;
+import net.legacylauncher.util.HelpLinks;
 import net.legacylauncher.util.OS;
 import net.legacylauncher.util.SwingUtil;
 import net.legacylauncher.util.sysinfo.OSHISystemInfoReporter;
@@ -36,7 +38,8 @@ public class PreSupportFrame extends VActionFrame {
     private final LocalizableCheckbox sendDiagnosticCheckbox = new LocalizableCheckbox("support.pre.diag.checkbox");
 
     {
-        sendDiagnosticCheckbox.setSelected(true);
+        // feature.logUpload: diagnostics are uploaded to pasta.llaun.ch
+        sendDiagnosticCheckbox.setSelected(BuildConfig.LOG_UPLOAD_ENABLED);
     }
 
     private final ExtendedPanel checkboxPanel = new ExtendedPanel();
@@ -48,10 +51,14 @@ public class PreSupportFrame extends VActionFrame {
         layout.setVgap(0);
         checkboxPanel.setLayout(layout);
         checkboxPanel.add(sendDiagnosticCheckbox);
-        checkboxPanel.add(whatIsDiagnosticLabel);
+        if (HelpLinks.isAllowed(Localizable.get("support.pre.diag.url"))) {
+            checkboxPanel.add(whatIsDiagnosticLabel);
+        }
+        checkboxPanel.setVisible(BuildConfig.LOG_UPLOAD_ENABLED);
     }
 
-    private final SystemInfoReporter systemInfoReporter = OSHISystemInfoReporter.createIfAvailable().orElse(null);
+    private final SystemInfoReporter systemInfoReporter = BuildConfig.LOG_UPLOAD_ENABLED ?
+            OSHISystemInfoReporter.createIfAvailable().orElse(null) : null;
     {
         if (systemInfoReporter != null) {
             systemInfoReporter.queueReport();
@@ -117,6 +124,16 @@ public class PreSupportFrame extends VActionFrame {
         pack();
 
         whatIsDiagnosticLabel.setToolTipText(Localizable.get("support.pre.diag.whatisit"));
+    }
+
+    @Override
+    public void setVisible(boolean visible) {
+        if (visible && !BuildConfig.LOG_UPLOAD_ENABLED) {
+            // nothing to offer here without diagnostics upload, go straight to the contacts
+            onContinued();
+            return;
+        }
+        super.setVisible(visible);
     }
 
     protected void onContinued() {

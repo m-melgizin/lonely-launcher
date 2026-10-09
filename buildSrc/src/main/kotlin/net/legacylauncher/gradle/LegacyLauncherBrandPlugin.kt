@@ -4,6 +4,9 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.create
 
+private fun Project.featureToggle(name: String) =
+    providers.gradleProperty("feature.$name").map { it.toBoolean() }.orElse(false)
+
 class LegacyLauncherBrandPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val extension = project.extensions.create<LegacyLauncherBrandExtension>("brand")
@@ -30,5 +33,7 @@ class LegacyLauncherBrandPlugin : Plugin<Project> {
         extension.updateRepository.convention(
             System.getenv("UPDATE_REPOSITORY") ?: System.getenv("GITHUB_REPOSITORY") ?: "m-melgizin/legacy-launcher"
         )
+        extension.logUploadEnabled.convention(project.featureToggle("logUpload"))
+        extension.helpLinksEnabled.convention(project.featureToggle("helpLinks"))
     }
 }

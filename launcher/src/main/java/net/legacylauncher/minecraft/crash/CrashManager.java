@@ -373,6 +373,16 @@ public final class CrashManager {
         }
 
         @Override
+        String getUrl(String arg) {
+            try {
+                OptionSet args = parser.parse(StringUtils.split(arg, ' '));
+                return args.has("www") ? args.valueOf("www").toString() : null;
+            } catch (RuntimeException e) {
+                return null;
+            }
+        }
+
+        @Override
         void execute(OptionSet args) {
             if (args.has("www")) {
                 OS.openLink(args.valueOf("www").toString());

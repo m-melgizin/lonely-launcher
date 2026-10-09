@@ -185,5 +185,10 @@ public class GraphicsEntry extends PatternContainerEntry {
         public void execute() {
             OS.openLink(url);
         }
+
+        @Override
+        public String getUrl() {
+            return url;
+        }
     }
 }
